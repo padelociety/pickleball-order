@@ -244,7 +244,7 @@ main{max-width:1200px;margin:0 auto;padding:32px 24px;}
           </div>
           <div class="asec" style="margin-top:20px;border-top:1px solid var(--bdr);padding-top:20px">
             <div class="asec-t">🏆 코트원 멤버십 할인율</div>
-            <div style="font-family:'DM Mono',monospace;font-size:11px;color:var(--dim);margin-bottom:12px">패들/신발/가방에만 적용 — 카드에 일반가 + 멤버십가 동시 표시됩니다.</div>
+            <div style="font-family:'DM Mono',monospace;font-size:11px;color:var(--dim);margin-bottom:12px">패들/신발/가방에만 적용 — 카드에 일반가 + 코트원 멤버십가 동시 표시됩니다.</div>
             <div class="arow"><span class="arow-lbl">🏓 패들 멤버십 할인</span><div style="display:flex;align-items:center;gap:6px"><input class="ainp" type="number" id="mPaddles" min="0" max="90" oninput="updatePrev()"><span class="aunit">%</span></div></div>
             <div class="arow"><span class="arow-lbl">👟 신발 멤버십 할인</span><div style="display:flex;align-items:center;gap:6px"><input class="ainp" type="number" id="mShoes" min="0" max="90" oninput="updatePrev()"><span class="aunit">%</span></div></div>
             <div class="arow"><span class="arow-lbl">🎒 가방 멤버십 할인</span><div style="display:flex;align-items:center;gap:6px"><input class="ainp" type="number" id="mBags" min="0" max="90" oninput="updatePrev()"><span class="aunit">%</span></div></div>
@@ -398,13 +398,13 @@ function priceHtml(msrp,cat){
   } else {
     html+='<div class="no-disc-krw">'+fw(krwFull)+'</div>';
   }
-  // 멤버십가 (패들/신발/가방만)
+  // 코트원 멤버십가 (패들/신발/가방만)
   var hasMember=['paddles','shoes','bags'].indexOf(cat)>=0;
   if(hasMember){
     var md=(c.memberDisc&&c.memberDisc[cat]!=null)?c.memberDisc[cat]:0;
     if(md>0){
       var krwMember=Math.round(msrp*c.rate*(1-md/100)/100)*100;
-      html+='<div class="member-row"><span class="member-badge">🏆 멤버십</span><span class="member-price">'+fw(krwMember)+'</span></div>';
+      html+='<div class="member-row"><span class="member-badge">🏆 코트원</span><span class="member-price">'+fw(krwMember)+'</span></div>';
     }
   }
   return html+'</div>';
@@ -624,7 +624,7 @@ function updatePrev(){
   var em2=ms>0?Math.round(140*rate*(1-ms/100)/100)*100:0;
   document.getElementById('prevBox').innerHTML='미리보기<br>X-FOAM NEXO (€214.95) → <span>'+fw(e1)+'</span><br>LUX TEMPO 신발 (€140) → <span>'+fw(e2)+'</span>';
   var memberPrev=document.getElementById('prevBoxMember');
-  if(memberPrev) memberPrev.innerHTML=(mp>0||ms>0)?'멤버십 미리보기<br>'+(mp>0?'X-FOAM NEXO → <span>'+fw(em1)+'</span><br>':'')+(ms>0?'LUX TEMPO 신발 → <span>'+fw(em2)+'</span>':''):'멤버십 할인율을 입력하면 여기에 표시됩니다.';
+  if(memberPrev) memberPrev.innerHTML=(mp>0||ms>0)?'코트원 미리보기<br>'+(mp>0?'X-FOAM NEXO → <span>'+fw(em1)+'</span><br>':'')+(ms>0?'LUX TEMPO 신발 → <span>'+fw(em2)+'</span>':''):'코트원 할인율을 입력하면 여기에 표시됩니다.';
 }
 function showAtab(id,tab){
   document.querySelectorAll('.atab').forEach(function(t){t.classList.remove('on');});
