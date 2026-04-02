@@ -359,7 +359,7 @@ function loadSettingsFromSheet(callback){
     .then(function(data){
       if(data.result === 'success' && data.payload && data.payload !== '{}'){
         try{
-          var saved = JSON.parse(data.payload);
+          var saved = typeof data.payload === 'string' ? JSON.parse(data.payload) : data.payload;
           if(saved.cfg){
             _settings = Object.assign({}, DEF, saved.cfg, {
               disc: Object.assign({}, DEF.disc, (saved.cfg.disc||{}))
