@@ -354,20 +354,24 @@ function _applySettings(s){
   if(s.nameOverrides) _nameOverrides=s.nameOverrides;
 }
 function loadSettingsFromSheet(cb){
-  var cbName='_pb_jsonp_'+Date.now(), done=false;
+  var cbName='_pb_jsonp_'+Date.now(), done=false, script;
+  var timer=setTimeout(function(){
+    if(!done){done=true;delete window[cbName];if(script&&script.parentNode)script.parentNode.removeChild(script);if(cb)cb();}
+  },3000);
   window[cbName]=function(res){
-    done=true;
+    if(done)return;
+    done=true;clearTimeout(timer);
     try{
       var s=(res.payload&&typeof res.payload==='string')?JSON.parse(res.payload):res.payload;
-      if(s&&Object.keys(s).length) _applySettings(s);
+      if(s&&Object.keys(s).length)_applySettings(s);
     }catch(e){}
     delete window[cbName];
-    if(script.parentNode) script.parentNode.removeChild(script);
-    if(cb) cb();
+    if(script&&script.parentNode)script.parentNode.removeChild(script);
+    if(cb)cb();
   };
-  var script=document.createElement('script');
+  script=document.createElement('script');
   script.src=SHEET_URL+'?callback='+cbName+'&t='+Date.now();
-  script.onerror=function(){if(!done){delete window[cbName];if(cb)cb();}};
+  script.onerror=function(){if(!done){done=true;clearTimeout(timer);delete window[cbName];if(cb)cb();}};
   document.head.appendChild(script);
 }
 function cfg(){return _settings;}
