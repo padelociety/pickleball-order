@@ -353,26 +353,29 @@ function _applySettings(s){
   if(s.imgOverrides) _imgOverrides=s.imgOverrides;
   if(s.nameOverrides) _nameOverrides=s.nameOverrides;
 }
-function loadSettingsFromSheet(cb){
-  var cbName='_pb_jsonp_'+Date.now(), done=false, script;
-  var timer=setTimeout(function(){
-    if(!done){done=true;delete window[cbName];if(script&&script.parentNode)script.parentNode.removeChild(script);if(cb)cb();}
-  },3000);
-  window[cbName]=function(res){
-    if(done)return;
-    done=true;clearTimeout(timer);
-    try{
-      var s=(res.payload&&typeof res.payload==='string')?JSON.parse(res.payload):res.payload;
-      if(s&&Object.keys(s).length)_applySettings(s);
-    }catch(e){}
-    delete window[cbName];
-    if(script&&script.parentNode)script.parentNode.removeChild(script);
-    if(cb)cb();
-  };
-  script=document.createElement('script');
-  script.src=SHEET_URL+'?callback='+cbName+'&t='+Date.now();
-  script.onerror=function(){if(!done){done=true;clearTimeout(timer);delete window[cbName];if(cb)cb();}};
-  document.head.appendChild(script);
+function loadSettingsFromSheet(callback){
+  fetch(SHEET_URL + '?t=' + Date.now())
+    .then(function(r){return r.json();})
+    .then(function(data){
+      if(data.result === 'success' && data.payload && data.payload !== '{}'){
+        try{
+          var saved = JSON.parse(data.payload);
+          if(saved.cfg){
+            _settings = Object.assign({}, DEF, saved.cfg, {
+              disc: Object.assign({}, DEF.disc, (saved.cfg.disc||{}))
+            });
+          }
+          if(saved.hidden) _hidden = saved.hidden;
+          if(saved.imgOverrides) _imgOverrides = saved.imgOverrides;
+          if(saved.nameOverrides) _nameOverrides = saved.nameOverrides;
+        }catch(e){console.warn('설정 파싱 오류:', e);}
+      }
+      if(callback) callback();
+    })
+    .catch(function(e){
+      console.warn('설정 불러오기 실패, 기본값 사용:', e);
+      if(callback) callback();
+    });
 }
 function cfg(){return _settings;}
 function saveCfg(s){_settings=Object.assign({},DEF,s,{disc:Object.assign({},DEF.disc,s.disc||{})});_syncToSheet();}
