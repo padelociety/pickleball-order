@@ -48,15 +48,15 @@ main{max-width:1200px;margin:0 auto;padding:32px 24px;}
 .pseries{font-family:'DM Mono',monospace;font-size:9px;color:#444;letter-spacing:.5px;text-transform:uppercase;}
 .price-wrap{display:flex;flex-direction:column;gap:3px;margin:6px 0 2px;}
 .price-eur{font-family:'DM Mono',monospace;font-size:11px;color:#555;}
-.price-krw-orig{font-family:'DM Mono',monospace;font-size:11px;color:#444;text-decoration:line-through;}
+.price-krw-orig{font-family:'Bebas Neue',sans-serif;font-size:14px;color:#666;letter-spacing:.5px;}
 .price-disc-row{display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
 .price-disc-pct{background:var(--acc);color:#000;font-family:'DM Mono',monospace;font-size:9px;padding:2px 6px;border-radius:3px;font-weight:700;}
-.price-disc-krw{font-family:'Bebas Neue',sans-serif;font-size:20px;color:#fff;}
-.no-disc-krw{font-family:'Bebas Neue',sans-serif;font-size:20px;color:#fff;}
+.price-disc-krw{font-family:'Bebas Neue',sans-serif;font-size:28px;color:#fff;}
+.no-disc-krw{font-family:'Bebas Neue',sans-serif;font-size:28px;color:#fff;}
 .no-price{font-family:'DM Mono',monospace;font-size:11px;color:#333;letter-spacing:.5px;}
-.member-row{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:4px;padding-top:4px;border-top:1px solid #1a2a1a;}
+.member-row{display:flex;flex-direction:column;align-items:flex-start;gap:2px;margin-top:4px;padding-top:4px;border-top:1px solid #1a2a1a;}
 .member-badge{background:#1a3a1a;color:#4caf50;font-family:'DM Mono',monospace;font-size:9px;padding:2px 6px;border-radius:3px;font-weight:700;border:1px solid #2a5a2a;white-space:nowrap;}
-.member-price{font-family:'Bebas Neue',sans-serif;font-size:20px;color:#4caf50;}
+.member-price{font-family:'Bebas Neue',sans-serif;font-size:28px;color:#4caf50;}
 .bdg{display:inline-block;font-family:'DM Mono',monospace;font-size:8px;letter-spacing:1px;padding:2px 6px;border:1px solid;text-transform:uppercase;align-self:flex-start;}
 .b-ok{border-color:var(--acc);color:var(--acc);}
 .b-pre{border-color:#f5c842;color:#f5c842;}
@@ -144,9 +144,22 @@ main{max-width:1200px;margin:0 auto;padding:32px 24px;}
 .hf-btn{font-family:'DM Mono',monospace;font-size:9px;padding:4px 10px;border:1px solid var(--bdr);color:var(--dim);background:none;cursor:pointer;}
 .hf-btn.on{border-color:var(--acc);color:var(--acc);}
 @media(max-width:600px){.fgrid{grid-template-columns:1fr;}.pgrid{grid-template-columns:1fr 1fr;}main{padding:16px;}}
+  #loadingOverlay{position:fixed;inset:0;background:var(--bg);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;transition:opacity 0.4s;}
+#loadingOverlay.hide{opacity:0;pointer-events:none;}
+.ld-logo{font-family:'Bebas Neue',sans-serif;font-size:36px;letter-spacing:6px;color:var(--acc);}
+.ld-logo span{color:var(--txt);}
+.ld-bar{width:160px;height:2px;background:#1a1a1a;border-radius:2px;overflow:hidden;}
+.ld-bar-inner{height:100%;width:30%;background:var(--acc);border-radius:2px;animation:ldslide 1s ease-in-out infinite alternate;}
+.ld-txt{font-family:'DM Mono',monospace;font-size:11px;color:var(--dim);letter-spacing:1px;}
+@keyframes ldslide{from{transform:translateX(-30%);}to{transform:translateX(320%);}}
   </style>
 </head>
 <body>
+<div id="loadingOverlay">
+  <div class="ld-logo">NOX <span>Pickleball</span></div>
+  <div class="ld-bar"><div class="ld-bar-inner"></div></div>
+  <div class="ld-txt">가격 정보 불러오는 중...</div>
+</div>
 <header>
   <div class="logo">NOX <span>Pickleball</span></div>
   <div class="hright">
@@ -400,7 +413,7 @@ function priceHtml(msrp,cat){
   var krwDisc=Math.round(msrp*c.rate*(1-d/100)/100)*100;
   var html='<div class="price-wrap"><div class="price-eur">€'+msrp.toLocaleString()+'</div>';
   if(d>0){
-    html+='<div class="price-krw-orig">'+fw(krwFull)+'</div>';
+    html+='<div class="price-krw-orig">소비자가 '+fw(krwFull)+'</div>';
     html+='<div class="price-disc-row"><span class="price-disc-pct">'+d+'% OFF</span><span class="price-disc-krw">'+fw(krwDisc)+'</span></div>';
   } else {
     html+='<div class="no-disc-krw">'+fw(krwFull)+'</div>';
@@ -411,7 +424,7 @@ function priceHtml(msrp,cat){
     var md=(c.memberDisc&&c.memberDisc[cat]!=null)?c.memberDisc[cat]:0;
     if(md>0){
       var krwMember=Math.round(msrp*c.rate*(1-md/100)/100)*100;
-      html+='<div class="member-row"><span class="member-badge">🏆 코트원</span><span class="member-price">'+fw(krwMember)+'</span></div>';
+      html+='<div class="member-row"><div style="display:flex;align-items:center;gap:6px"><span class="member-badge">🏆 코트원</span><span class="member-badge" style="background:none;border-color:#2a5a2a">'+md+'% OFF</span></div><span class="member-price">'+fw(krwMember)+'</span></div>';
     }
   }
   return html+'</div>';
@@ -529,7 +542,7 @@ function updN(){document.getElementById('cartN').textContent=cart.reduce(functio
 function flash(){var b=document.getElementById('cartBtn');b.style.transform='scale(1.08)';setTimeout(function(){b.style.transform='';},150);}
 function changeQty(i,delta){cart[i].q+=delta;if(cart[i].q<=0)cart.splice(i,1);updN();renderCart();}
 function rmItem(i){cart.splice(i,1);updN();renderCart();}
-function openCart(){renderCart();document.getElementById('cartOvl').classList.add('on');}
+function openCart(){var s=document.getElementById('succMsg');var c=document.getElementById('cartCnt');if(s)s.classList.remove('on');if(c)c.style.display='';renderCart();document.getElementById('cartOvl').classList.add('on');}
 function closeCart(){document.getElementById('cartOvl').classList.remove('on');}
 function renderCart(){
   var body=document.getElementById('cartBody');
@@ -813,6 +826,7 @@ renderAll();
 document.getElementById('cartOvl').addEventListener('click',function(e){if(e.target===e.currentTarget)closeCart();});
 document.getElementById('admOvl').addEventListener('click',function(e){if(e.target===e.currentTarget)closeAdmin();});
 loadSettingsFromSheet(function(){
+  var ov=document.getElementById('loadingOverlay');if(ov){ov.classList.add('hide');setTimeout(function(){ov.style.display='none';},400);}
   applyImgOverrides();
   applyNameOverrides();
   var rate=cfg().rate||1550;
