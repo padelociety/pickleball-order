@@ -365,10 +365,7 @@ var _origName = {};
 
 var LS_KEY = 'ps_order_settings';
 function _saveToLocalStorage(){
-  try{
-    var payload={cfg:_settings,hidden:_hidden,imgOverrides:_imgOverrides,nameOverrides:_nameOverrides};
-    localStorage.setItem(LS_KEY, JSON.stringify(payload));
-  }catch(e){console.warn('localStorage 저장 실패:',e);}
+  try{ localStorage.setItem(LS_KEY, JSON.stringify(_buildPayload())); }catch(e){console.warn('localStorage 저장 실패:',e);}
 }
 function _loadFromLocalStorage(){
   try{
@@ -377,17 +374,25 @@ function _loadFromLocalStorage(){
     return JSON.parse(raw);
   }catch(e){return null;}
 }
+function _buildPayload(){
+  // base64 이미지는 URL 길이 초과 문제로 저장에서 제외
+  var safeImgOverrides = {};
+  for(var ref in _imgOverrides){
+    if(_imgOverrides[ref] && !_imgOverrides[ref].startsWith('data:')){
+      safeImgOverrides[ref] = _imgOverrides[ref];
+    }
+  }
+  return {cfg:_settings, hidden:_hidden, imgOverrides:safeImgOverrides, nameOverrides:_nameOverrides};
+}
 function _syncToSheet(onDone){
-  var payload = JSON.stringify({cfg:_settings,hidden:_hidden,imgOverrides:_imgOverrides,nameOverrides:_nameOverrides});
+  var payload = JSON.stringify(_buildPayload());
   // 1. 항상 localStorage에 즉시 백업
-  _saveToLocalStorage();
-  // 2. GET 방식으로 Sheet 저장 (POST는 Apps Script CORS 문제로 미도달 가능)
+  try{ localStorage.setItem(LS_KEY, payload); }catch(e){console.warn('localStorage 저장 실패:',e);}
+  // 2. GET 방식으로 Sheet 저장
   var url = SHEET_URL + '?type=save_settings&payload=' + encodeURIComponent(payload);
   fetch(url)
     .then(function(r){return r.json();})
-    .then(function(data){
-      if(onDone)onDone(data.result==='success');
-    })
+    .then(function(data){if(onDone)onDone(data.result==='success');})
     .catch(function(e){console.warn('Sheet 저장 실패:',e);if(onDone)onDone(false);});
 }
 function _applySettingsData(saved){
