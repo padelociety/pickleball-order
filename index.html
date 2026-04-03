@@ -363,18 +363,43 @@ var _nameOverrides = {};
 var _origImg = {};
 var _origName = {};
 
+var LS_KEY = 'ps_order_settings';
+function _saveToLocalStorage(){
+  try{
+    var payload={cfg:_settings,hidden:_hidden,imgOverrides:_imgOverrides,nameOverrides:_nameOverrides};
+    localStorage.setItem(LS_KEY, JSON.stringify(payload));
+  }catch(e){console.warn('localStorage 저장 실패:',e);}
+}
+function _loadFromLocalStorage(){
+  try{
+    var raw=localStorage.getItem(LS_KEY);
+    if(!raw) return null;
+    return JSON.parse(raw);
+  }catch(e){return null;}
+}
 function _syncToSheet(onDone){
   var payload = JSON.stringify({cfg:_settings,hidden:_hidden,imgOverrides:_imgOverrides,nameOverrides:_nameOverrides});
-  fetch(SHEET_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=utf-8'},
-    body:JSON.stringify({type:'save_settings',payload:payload})
-  }).then(function(){if(onDone)onDone(true);}).catch(function(e){console.warn('저장 실패:',e);if(onDone)onDone(false);});
+  // 1. 항상 localStorage에 즉시 백업
+  _saveToLocalStorage();
+  // 2. GET 방식으로 Sheet 저장 (POST는 Apps Script CORS 문제로 미도달 가능)
+  var url = SHEET_URL + '?type=save_settings&payload=' + encodeURIComponent(payload);
+  fetch(url)
+    .then(function(r){return r.json();})
+    .then(function(data){
+      if(onDone)onDone(data.result==='success');
+    })
+    .catch(function(e){console.warn('Sheet 저장 실패:',e);if(onDone)onDone(false);});
 }
-function _applySettings(s){
-  if(!s) return;
-  if(s.cfg) _settings=Object.assign({},DEF,s.cfg,{disc:Object.assign({},DEF.disc,(s.cfg.disc||{}))});
-  if(s.hidden) _hidden=s.hidden;
-  if(s.imgOverrides) _imgOverrides=s.imgOverrides;
-  if(s.nameOverrides) _nameOverrides=s.nameOverrides;
+function _applySettingsData(saved){
+  if(!saved) return;
+  if(saved.cfg){
+    _settings = Object.assign({}, DEF, saved.cfg, {
+      disc: Object.assign({}, DEF.disc, (saved.cfg.disc||{}))
+    });
+  }
+  if(saved.hidden) _hidden = saved.hidden;
+  if(saved.imgOverrides) _imgOverrides = saved.imgOverrides;
+  if(saved.nameOverrides) _nameOverrides = saved.nameOverrides;
 }
 function loadSettingsFromSheet(callback){
   fetch(SHEET_URL + '?t=' + Date.now())
@@ -383,20 +408,21 @@ function loadSettingsFromSheet(callback){
       if(data.result === 'success' && data.payload && data.payload !== '{}'){
         try{
           var saved = typeof data.payload === 'string' ? JSON.parse(data.payload) : data.payload;
-          if(saved.cfg){
-            _settings = Object.assign({}, DEF, saved.cfg, {
-              disc: Object.assign({}, DEF.disc, (saved.cfg.disc||{}))
-            });
-          }
-          if(saved.hidden) _hidden = saved.hidden;
-          if(saved.imgOverrides) _imgOverrides = saved.imgOverrides;
-          if(saved.nameOverrides) _nameOverrides = saved.nameOverrides;
+          _applySettingsData(saved);
+          // Sheet 로드 성공 시 localStorage도 동기화
+          _saveToLocalStorage();
         }catch(e){console.warn('설정 파싱 오류:', e);}
+      } else {
+        // Sheet에 데이터 없으면 localStorage에서 복원 시도
+        var local = _loadFromLocalStorage();
+        if(local){ _applySettingsData(local); console.info('localStorage에서 설정 복원됨'); }
       }
       if(callback) callback();
     })
     .catch(function(e){
-      console.warn('설정 불러오기 실패, 기본값 사용:', e);
+      console.warn('설정 불러오기 실패, localStorage 시도:', e);
+      var local = _loadFromLocalStorage();
+      if(local){ _applySettingsData(local); console.info('localStorage에서 설정 복원됨'); }
       if(callback) callback();
     });
 }
@@ -634,9 +660,9 @@ function loadAdminUI(){
   document.getElementById('dBags').value=(c.disc.bags!=null)?c.disc.bags:15;
   document.getElementById('dAcc').value=(c.disc.accessories!=null)?c.disc.accessories:10;
   document.getElementById('dTextile').value=(c.disc.textile!=null)?c.disc.textile:15;
-  document.getElementById('mPaddles').value=(c.memberDisc&&c.memberDisc.paddles)||0;
-  document.getElementById('mShoes').value=(c.memberDisc&&c.memberDisc.shoes)||0;
-  document.getElementById('mBags').value=(c.memberDisc&&c.memberDisc.bags)||0;
+  document.getElementById('mPaddles').value=(c.memberDisc&&c.memberDisc.paddles!=null)?c.memberDisc.paddles:0;
+  document.getElementById('mShoes').value=(c.memberDisc&&c.memberDisc.shoes!=null)?c.memberDisc.shoes:0;
+  document.getElementById('mBags').value=(c.memberDisc&&c.memberDisc.bags!=null)?c.memberDisc.bags:0;
   document.getElementById('sEmail').value=c.email||'';
   document.getElementById('sAccount').value=c.account||'';
   document.getElementById('sNotice').value=c.notice||'';
