@@ -363,11 +363,11 @@ var _nameOverrides = {};
 var _origImg = {};
 var _origName = {};
 
-function _syncToSheet(){
+function _syncToSheet(onDone){
   var payload = JSON.stringify({cfg:_settings,hidden:_hidden,imgOverrides:_imgOverrides,nameOverrides:_nameOverrides});
   fetch(SHEET_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=utf-8'},
     body:JSON.stringify({type:'save_settings',payload:payload})
-  }).catch(function(e){console.warn('저장 실패:',e);});
+  }).then(function(){if(onDone)onDone(true);}).catch(function(e){console.warn('저장 실패:',e);if(onDone)onDone(false);});
 }
 function _applySettings(s){
   if(!s) return;
@@ -629,11 +629,11 @@ function checkPw(){
 function loadAdminUI(){
   var c=cfg();
   document.getElementById('sRate').value=c.rate;
-  document.getElementById('dPaddles').value=c.disc.paddles||20;
-  document.getElementById('dShoes').value=c.disc.shoes||15;
-  document.getElementById('dBags').value=c.disc.bags||15;
-  document.getElementById('dAcc').value=c.disc.accessories||10;
-  document.getElementById('dTextile').value=c.disc.textile||15;
+  document.getElementById('dPaddles').value=(c.disc.paddles!=null)?c.disc.paddles:20;
+  document.getElementById('dShoes').value=(c.disc.shoes!=null)?c.disc.shoes:15;
+  document.getElementById('dBags').value=(c.disc.bags!=null)?c.disc.bags:15;
+  document.getElementById('dAcc').value=(c.disc.accessories!=null)?c.disc.accessories:10;
+  document.getElementById('dTextile').value=(c.disc.textile!=null)?c.disc.textile:15;
   document.getElementById('mPaddles').value=(c.memberDisc&&c.memberDisc.paddles)||0;
   document.getElementById('mShoes').value=(c.memberDisc&&c.memberDisc.shoes)||0;
   document.getElementById('mBags').value=(c.memberDisc&&c.memberDisc.bags)||0;
@@ -683,7 +683,14 @@ function saveAll(){
     account:document.getElementById('sAccount').value.trim(),
     notice:document.getElementById('sNotice').value.trim()
   };
-  saveCfg(s);
+  _settings=Object.assign({},DEF,s,{disc:Object.assign({},DEF.disc,s.disc||{})});
+  _syncToSheet(function(ok){
+    var t=document.createElement('div');
+    t.style.cssText='position:fixed;bottom:30px;left:50%;transform:translateX(-50%);background:#222;color:#fff;padding:12px 24px;border-radius:8px;font-size:14px;z-index:99999;';
+    t.textContent=ok?'✅ 저장 완료':'⚠️ 저장 전송됨 (결과 확인 불가)';
+    document.body.appendChild(t);
+    setTimeout(function(){t.remove();},2500);
+  });
   var rd=document.getElementById('rateDisplay');
   if(rd)rd.textContent=s.rate.toLocaleString('ko-KR');
   closeAdmin();renderAll();
